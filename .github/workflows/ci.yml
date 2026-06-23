@@ -13,12 +13,25 @@ jobs:
     env:
       HEADLESS: "true"
 
-    container:
-      image: markhobson/maven-chrome:jdk-21
+    #    container:
+    #      image: markhobson/maven-chrome:jdk-21
 
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v6
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Instalar Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+        
 
       - name: Cache de Maven
         uses: actions/cache@v5
