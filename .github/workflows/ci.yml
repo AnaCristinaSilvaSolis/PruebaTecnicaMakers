@@ -1,0 +1,57 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  test:
+    timeout-minutes: 30
+    name: Ejecutar Pruebas E2E
+    runs-on: ubuntu-latest
+
+    env:
+      HEADLESS: "true"
+
+    container:
+      image: markhobson/maven-chrome:jdk-21
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v6
+
+      - name: Cache de Maven
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Cache de Allure
+        uses: actions/cache@v5
+        with:
+          path: /opt/allure-2.29.0
+          key: allure-2.29.0
+
+      - name: Dar permisos de ejecución a los scripts
+        run: chmod +x ./mvnw ./runSuite.sh .github/scripts/*.sh
+
+      - name: Ejecutar pruebas
+        run: ./runSuite.sh
+
+      - name: Generar reporte (Single HTML de Allure)
+        if: always()
+        run: ./.github/scripts/generar_allure.sh
+
+      - name: Mostrar resumen en Summary de GitHub
+        if: always()
+        run: ./.github/scripts/generar_summary.sh
+
+      - name: Guardar reporte para descargar
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report.html
+          path: ./allure-temp/index.html
+          retention-days: 3
+          archive: false
